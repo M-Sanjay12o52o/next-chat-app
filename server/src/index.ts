@@ -1,35 +1,25 @@
-import ws from "ws";
-const server = new ws.Server({ port: 3001 });
+import { createServer } from "http";
+import { Server } from "socket.io";
 
-server.on("connection", (socket) => {
-  socket.on("message", (message) => {
-    console.log(message.toString());
-    socket.send(`${message}`);
+const httpServer = createServer();
+
+const io = new Server(httpServer, {
+  cors: {
+    origin:
+      process.env.NODE_ENV === "production" ? false : ["http://localhost:3000"],
+    // "*",
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log(`User ${socket.id} connected`);
+
+  socket.on("message", (data) => {
+    console.log("socket message: ", data);
+    io.emit("message", `${socket.id.substring(0, 5)}: ${data}`);
   });
 });
 
-// import express from "express";
-// import { createServer } from "http";
-// import { Server } from "socket.io";
-// import cors from "cors";
-
-// const ADMIN = "Admin";
-// const app = express();
-// const server = createServer(app);
-// const io = new Server(server, {
-//   cors: {
-//     origin: "*",
-//   },
-// });
-
-// app.use(cors());
-
-// server.on("connection", (socket) => {
-//   socket.on("message", (message) => {
-//     console.log(message);
-//   });
-// });
-
-// server.listen(3001, () => {
-//   console.log("server running at localhost:3001");
-// });
+httpServer.listen(3001, () => {
+  console.log("listening on port 3001");
+});

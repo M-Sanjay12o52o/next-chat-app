@@ -4,39 +4,42 @@ import { FormEvent, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 
 export default function Home() {
-  // const socket = io('http://localhost:3001');
-  const [inputValue, setInputValue] = useState<string>("")
+  const socket = io('http://localhost:3001');
+  const [inputValue, setInputValue] = useState<string>("");
   const [messages, setMessages] = useState<string[]>([]);
 
-  const socket = new WebSocket('ws://localhost:3001')
+  useEffect(() => {
+    console.log(messages);
 
-  // useEffect(() => {
-  // Listening for messages from the server
-  socket.addEventListener('message', (event) => {
-    const data = event.data;
-    setMessages((prevMessages) => [...prevMessages, data]);
-  });
+    const handleMessage = (data: any) => {
+      console.log("client message: ", data);
+      setMessages((prevMessages) => [...prevMessages, data]);
+    };
 
-  //   return () => {
-  //     socket.close();
-  //   };
-  // }, []);
+    socket.on('connect', () => {
+      console.log('Connected to server');
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Disconnected from server');
+    });
+
+    socket.on('message', handleMessage);
+
+    return () => {
+      // Clean up the event handler on component unmount
+      socket.off('message', handleMessage);
+    };
+  }, [messages]);
 
   const sendMessage = (e: FormEvent) => {
     e.preventDefault();
 
     if (inputValue !== "") {
-      socket.send(inputValue)
+      socket.emit("message", inputValue);
       setInputValue("");
     }
-  }
-
-  // listening for message from server
-  // socket.addEventListener("message", ({ data }) => {
-  //   const li = document.createElement('li');
-  //   li.textContent = data;
-  //   document.querySelector('ul')?.appendChild(li)
-  // })
+  };
 
   return (
     <div>
@@ -51,5 +54,5 @@ export default function Home() {
         ))}
       </ul>
     </div>
-  )
+  );
 }
